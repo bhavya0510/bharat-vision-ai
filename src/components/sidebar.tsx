@@ -14,13 +14,14 @@ export interface RecentItem {
 }
 
 interface SidebarProps {
-  currentView: "home" | "gallery" | "chat"
-  onViewChange: (view: "home" | "gallery" | "chat") => void
+  currentView: "home" | "gallery" | "chat" | "profile"
+  onViewChange: (view: "home" | "gallery" | "chat" | "profile") => void
   userName?: string
   userEmail?: string
   onLogout?: () => void
   recentItems?: RecentItem[]
   onSelectRecentItem?: (item: RecentItem) => void
+  onOpenProfile?: () => void
 }
 
 export default function Sidebar({
@@ -30,15 +31,29 @@ export default function Sidebar({
   userEmail,
   onLogout,
   recentItems = [],
-  onSelectRecentItem
+  onSelectRecentItem,
+  onOpenProfile
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+
+  const displayName = userName || "Sourabh Kumar"
+  const displayEmail = userEmail || "sourabh@bharatvision.ai"
+  const initial = (displayName.trim().charAt(0) || "S").toUpperCase()
 
   const navItems = [
     { id: "home" as const, icon: Home, label: "Home" },
     { id: "gallery" as const, icon: Images, label: "Gallery" },
     { id: "chat" as const, icon: MessageSquare, label: "Generate" },
+    { id: "profile" as const, icon: User, label: "Profile" },
   ]
+
+  const handleProfileClick = () => {
+    if (onOpenProfile) {
+      onOpenProfile()
+    } else {
+      onViewChange("profile")
+    }
+  }
 
   return (
     <aside
@@ -81,7 +96,13 @@ export default function Sidebar({
           return (
             <button
               key={item.id}
-              onClick={() => onViewChange(item.id)}
+              onClick={() => {
+                if (item.id === "profile" && onOpenProfile) {
+                  onOpenProfile()
+                } else {
+                  onViewChange(item.id)
+                }
+              }}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors cursor-pointer",
                 currentView === item.id
@@ -133,23 +154,31 @@ export default function Sidebar({
       )}
 
       {/* User Profile Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border bg-sidebar">
+      <div
+        onClick={handleProfileClick}
+        title="Open Profile"
+        className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border bg-sidebar hover:bg-sidebar-accent/60 transition-all cursor-pointer group"
+      >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs shadow-md">
-            {userName.charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs shadow-md group-hover:scale-105 group-hover:ring-2 group-hover:ring-indigo-400/50 transition-all flex-shrink-0">
+            {initial}
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">{userEmail}</p>
+              <p className="text-sm font-medium text-sidebar-foreground truncate group-hover:text-indigo-300 transition-colors">
+                {displayName}
+              </p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">
+                {displayEmail}
+              </p>
             </div>
           )}
           {!isCollapsed && (
-            <div className="flex gap-1">
+            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={onLogout}
                 title="Log out"
-                className="p-1.5 rounded hover:bg-sidebar-accent/50 hover:text-red-400 transition-colors cursor-pointer"
+                className="p-1.5 rounded hover:bg-sidebar-accent hover:text-red-400 transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4 text-sidebar-foreground" />
               </button>

@@ -7,7 +7,8 @@ import TubesCursor from "@/components/ui/tubes-cursor"
 import NeonGlow from "@/components/neon-glow"
 import { OrbitalHeroSection } from "@/components/ui/orbital-hero-section"
 import MorphOrb from "@/components/ui/ai-thiking-orb-and-input"
-import { Sparkles, Images, Zap, X, Download, Wand2 } from "lucide-react"
+import ProfileView from "@/components/profile-view"
+import { Sparkles, Images, Zap, X, Download, Wand2, User } from "lucide-react"
 
 /** True while the viewport is narrow. Drives the layout swap below. */
 function useNarrow(query = "(max-width: 767px)") {
@@ -88,9 +89,24 @@ const indianArtworks: RecentItem[] = [
 ]
 
 export default function GeneratePage({ userName, userEmail, onLogout }: GeneratePageProps) {
-  const [currentView, setCurrentView] = useState<"home" | "gallery" | "chat">("home")
+  const [currentView, setCurrentView] = useState<"home" | "gallery" | "chat" | "profile">("home")
   const [selectedImage, setSelectedImage] = useState<RecentItem | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("All")
+  const [profileName, setProfileName] = useState<string>(userName || "Sourabh Kumar")
+  const [profileEmail, setProfileEmail] = useState<string>(userEmail || "sourabh@bharatvision.ai")
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedName = localStorage.getItem("userName")
+      const storedEmail = localStorage.getItem("userEmail")
+      if (storedName) setProfileName(storedName)
+      else if (userName) setProfileName(userName)
+
+      if (storedEmail) setProfileEmail(storedEmail)
+      else if (userEmail) setProfileEmail(userEmail)
+    }
+  }, [userName, userEmail])
 
   const narrow = useNarrow()
 
@@ -114,6 +130,11 @@ export default function GeneratePage({ userName, userEmail, onLogout }: Generate
     return `Here's what I imagine for "${text}" — a vivid AI generation blending Indian heritage, temple architecture, fine paintings & royal attire.`
   }
 
+  const handleUpdateUser = (newName: string, newEmail: string) => {
+    setProfileName(newName)
+    setProfileEmail(newEmail)
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <NeonGlow />
@@ -121,12 +142,19 @@ export default function GeneratePage({ userName, userEmail, onLogout }: Generate
       
       <Sidebar
         currentView={currentView}
-        onViewChange={setCurrentView}
-        userName={userName}
-        userEmail={userEmail}
+        onViewChange={(view) => {
+          if (view === "profile") {
+            setIsProfileOpen(true)
+          } else {
+            setCurrentView(view)
+          }
+        }}
+        userName={profileName}
+        userEmail={profileEmail}
         onLogout={onLogout}
         recentItems={indianArtworks}
         onSelectRecentItem={(item) => setSelectedImage(item)}
+        onOpenProfile={() => setIsProfileOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -162,7 +190,7 @@ export default function GeneratePage({ userName, userEmail, onLogout }: Generate
                   <div className="mt-8 flex flex-wrap items-center gap-3 md:mt-10">
                     <button
                       onClick={() => setCurrentView("chat")}
-                      className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-white/90 cursor-pointer"
+                      className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-white/90 cursor-pointer shadow-lg shadow-white/10"
                     >
                       <Sparkles className="h-4 w-4" />
                       Generate AI Vision
@@ -374,6 +402,21 @@ export default function GeneratePage({ userName, userEmail, onLogout }: Generate
           </div>
         </div>
       )}
+
+      {/* User Profile View / Modal */}
+      <ProfileView
+        isOpen={isProfileOpen || currentView === "profile"}
+        onClose={() => {
+          setIsProfileOpen(false)
+          if (currentView === "profile") {
+            setCurrentView("home")
+          }
+        }}
+        userName={profileName}
+        userEmail={profileEmail}
+        onUpdateUser={handleUpdateUser}
+        onLogout={onLogout}
+      />
     </div>
   )
 }
