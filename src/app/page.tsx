@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import HyperdriveHero from "@/components/ui/hyperdrive-hero";
 import GeneratePage from "@/app/generate/page";
 import { X, Sparkles, LogIn, UserPlus } from "lucide-react";
@@ -13,8 +13,42 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
 
+  // Load user info from localStorage on mount
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("userEmail");
+    const storedName = localStorage.getItem("userName");
+    if (storedEmail && storedName) {
+      setEmail(storedEmail);
+      setName(storedName);
+      setIsLoggedIn(true);
+    }
+  }, []);
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Retrieve name from localStorage based on email
+    const storedName = localStorage.getItem(`userName_${email}`);
+    let displayName = "";
+    if (storedName) {
+      displayName = storedName;
+    } else {
+      // Use email username as fallback if name not found
+      const emailUsername = email.split("@")[0];
+      displayName = emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1);
+    }
+    setName(displayName);
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem("userName", displayName);
+    setIsLoggedIn(true);
+    setAuthModal(null);
+  };
+
+  const handleSignupSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Store user info with email as key
+    localStorage.setItem(`userName_${email}`, name);
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem("userName", name);
     setIsLoggedIn(true);
     setAuthModal(null);
   };
@@ -24,7 +58,10 @@ export default function Home() {
       {!isLoggedIn ? (
         <>
           <HyperdriveHero
-            onLogin={() => setAuthModal("login")}
+            onLogin={() => {
+              setAuthModal("login");
+              setName("");
+            }}
             onSignUp={() => setAuthModal("signup")}
           />
 
@@ -54,7 +91,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <form onSubmit={authModal === "signup" ? handleSignupSubmit : handleLoginSubmit} className="space-y-4">
                   {authModal === "signup" && (
                     <div>
                       <label className="block text-xs font-medium text-zinc-300 mb-1">
@@ -121,7 +158,10 @@ export default function Home() {
                       Don&apos;t have an account?{" "}
                       <button
                         type="button"
-                        onClick={() => setAuthModal("signup")}
+                        onClick={() => {
+                          setAuthModal("signup");
+                          setName("");
+                        }}
                         className="text-indigo-400 hover:underline font-medium ml-1"
                       >
                         Sign Up
@@ -132,7 +172,10 @@ export default function Home() {
                       Already have an account?{" "}
                       <button
                         type="button"
-                        onClick={() => setAuthModal("login")}
+                        onClick={() => {
+                          setAuthModal("login");
+                          setName("");
+                        }}
                         className="text-indigo-400 hover:underline font-medium ml-1"
                       >
                         Log In
@@ -147,9 +190,16 @@ export default function Home() {
       ) : (
         /* Home Page After Login */
         <GeneratePage
-          userName={name || "Sourabh"}
-          userEmail={email || "sourabh@bharatvision.ai"}
-          onLogout={() => setIsLoggedIn(false)}
+          userName={name || "User"}
+          userEmail={email || "user@example.com"}
+          onLogout={() => {
+            setIsLoggedIn(false);
+            localStorage.removeItem("userEmail");
+            localStorage.removeItem("userName");
+            setEmail("");
+            setName("");
+            setPassword("");
+          }}
         />
       )}
 

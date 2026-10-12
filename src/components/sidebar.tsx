@@ -26,8 +26,8 @@ interface SidebarProps {
 export default function Sidebar({
   currentView,
   onViewChange,
-  userName = "Sourabh",
-  userEmail = "sourabh@bharatvision.ai",
+  userName,
+  userEmail,
   onLogout,
   recentItems = [],
   onSelectRecentItem
